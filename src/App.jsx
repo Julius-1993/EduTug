@@ -136,16 +136,8 @@ function lbSave(e) { const lb = lbGet(); lb.push({ ...e, date: new Date().toLoca
 function lbClear() { ls.del(LB_KEY); }
 function exportDB() { const blob = new Blob([JSON.stringify({ meta: ls.get(META_KEY), questions: dbGet() }, null, 2)], { type: "application/json" }); const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `etow_db_${new Date().toISOString().split("T")[0]}.json` }); a.click(); URL.revokeObjectURL(a.href); }
 
-// SOUND ENGINE 
-// let _ac = null, _muted = false;
-// const ac = () => { if (!_ac) _ac = new (window.AudioContext || window.webkitAudioContext)(); if (_ac.state === "suspended") _ac.resume(); return _ac; };
-// const beep = (freq, type, dur, vol = 0.12) => { if (_muted) return; try { const c = ac(), o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.value = freq; o.connect(g); g.connect(c.destination); g.gain.setValueAtTime(vol, c.currentTime); g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + dur); o.start(); o.stop(c.currentTime + dur); } catch { } };
-// const Sound = { setMuted: v => { _muted = v; }, isMuted: () => _muted, correct: () => { beep(523, "sine", .08, .1); setTimeout(() => beep(659, "sine", .1, .1), 80); setTimeout(() => beep(784, "sine", .18, .1), 165); }, wrong: () => { beep(220, "sawtooth", .18, .09); setTimeout(() => beep(180, "sawtooth", .22, .07), 130); }, select: () => beep(440, "sine", .1, .06), tick: () => beep(880, "sine", .055, .04), urgent: () => beep(1320, "sine", .06, .06), pull: () => { try { const c = ac(), buf = c.createBuffer(1, c.sampleRate * .25, c.sampleRate), d = buf.getChannelData(0); for (let i = 0; i < d.length; i++)d[i] = (Math.random() * 2 - 1) * (1 - i / d.length) * .1; const s = c.createBufferSource(); s.buffer = buf; s.connect(c.destination); s.start(); } catch { } }, victory: () => [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => beep(f, "sine", .35, .12), i * 110)), };
 
-// ===============================
 // SOUND ENGINE
-// ===============================
-
 let _ac = null;
 let _muted = false;
 
@@ -339,6 +331,13 @@ const isValidQ = q => q && typeof q.q === "string" && q.q.trim().length > 5 && A
 //  AI GENERATORS
 // Uses gpt-4o-mini: fast, accurate, ideal for educational questions
 const _OKEY = OPENAI_KEY;
+
+function getTopics(subject, levelKey) {
+  const m = SUBJECT_TOPICS[subject]; if (!m) return null;
+  if (levelKey==="primary") return m.primary||m.junior||m.senior;
+  if (levelKey==="junior") return m.junior||m.senior||m.primary;
+  return m.senior||m.junior||m.primary;
+}
 
 async function callOpenAI(messages, signal, attempt = 0) {
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
