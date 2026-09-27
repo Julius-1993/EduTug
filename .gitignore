@@ -1,0 +1,10 @@
+node_modules/
+dist/
+dist-electron/
+android/
+ios/
+.env
+*.ico
+*.icns
+*.DS_Store
+.capacitor/
